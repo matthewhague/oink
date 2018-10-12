@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #include <cassert>
 #include <cstring> // memset
 #include <iostream>
@@ -29,7 +35,11 @@ Game::Game() :
     n_nodes(0), n_edges(0),
     priority(new int[n_nodes]), owner(n_nodes), label(new std::string[n_nodes]),
     out(new std::vector<int>[n_nodes]), in(new std::vector<int>[n_nodes]),
-    solved(n_nodes), winner(n_nodes), strategy(new int[n_nodes]), reindexed(false)
+    solved(n_nodes), winner(n_nodes),
+    /** MODIFIED BY MATT **/
+    strategy(new std::vector<int>[n_nodes]),
+    /** END MODIFIED **/
+    reindexed(false)
 {
 }
 
@@ -37,10 +47,14 @@ Game::Game(int count) :
     n_nodes(count), n_edges(0),
     priority(new int[n_nodes]), owner(n_nodes), label(new std::string[n_nodes]),
     out(new std::vector<int>[n_nodes]), in(new std::vector<int>[n_nodes]),
-    solved(n_nodes), winner(n_nodes), strategy(new int[n_nodes]), reindexed(false)
+    solved(n_nodes), winner(n_nodes),
+    /** MODIFIED BY MATT **/
+    strategy(new std::vector<int>[n_nodes]),
+    /** END MODIFIED **/
+    reindexed(false)
 {
     assert(count > 0);
-    memset(strategy, -1, sizeof(int[n_nodes]));
+    /** MODIFIED: LINE REMOVED BY MATT **/
 }
 
 Game::Game(const Game& other) : Game(other.n_nodes)
@@ -56,7 +70,10 @@ Game::Game(const Game& other) : Game(other.n_nodes)
 
     solved = other.solved;
     winner = other.winner;
-    memcpy(strategy, other.strategy, sizeof(int[n_nodes]));
+    /** MODIFIED BY MATT **/
+    strategy = new std::vector<int>[n_nodes];
+    for (int i=0; i<n_nodes; i++) strategy[i] = other.strategy[i];
+    /** END MODIFIED **/
 }
 
 static void
@@ -127,9 +144,11 @@ Game::Game(istream &inp)
 
     solved.resize(n_nodes);
     winner.resize(n_nodes);
-    strategy = new int[n_nodes];
 
-    memset(strategy, -1, sizeof(int[n_nodes]));
+    /** MODIFIED BY MATT **/
+    strategy = new std::vector<int>[n_nodes];
+    /** END MODIFIED **/
+
     solved.set(); // we use solved for temporary storage
 
     /**
@@ -304,18 +323,24 @@ Game::parse_solution(std::istream &in)
         // parse strategy
         if (w == owner[ident]) {
             int str;
-            if (!(ss >> str)) throw "missing strategy for winning node";
+            /** MODIFIED BY MATT **/
+            bool has_option = false;
 
-            bool done = false;
-            for (auto o : out[ident]) {
-                if (o == str) {
-                    strategy[ident] = o;
-                    done = true;
-                    break;
+            while (ss >> str) {
+                bool done = false;
+                for (auto o : out[ident]) {
+                    if (o == str) {
+                        strategy[ident].push_back(o);
+                        done = true;
+                        break;
+                    }
                 }
+
+                if (!done) throw "strategy not successor of node";
             }
 
-            if (!done) throw "strategy not successor of node";
+            if (!has_option) throw "missing strategy for winning node";
+            /** END MODIFIED **/
         }
     }
 }
@@ -363,7 +388,7 @@ Game::write_sol(std::ostream &out)
     for (int i=0; i<n_nodes; i++) {
         if (solved[i]) {
             out << i << " " << (winner[i] ? "1" : "0");
-            if (strategy[i] != -1) out << " " << strategy[i];
+            for (int n : strategy[i]) out << " " << n;
             out << ";" << endl;
         }
     }
@@ -398,7 +423,13 @@ Game::permute(int *mapping)
     for (int i=0; i<n_nodes; i++) {
         for (auto it = in[i].begin(); it != in[i].end(); it++) *it = mapping[*it];
         for (auto it = out[i].begin(); it != out[i].end(); it++) *it = mapping[*it];
-        if (strategy[i] != -1) strategy[i] = mapping[strategy[i]];
+        /** MODIFIED  BY MATT **/
+        for (int i=0; i<n_nodes; i++) {
+            for (unsigned j=0; j<strategy[i].size(); j++) {
+                strategy[i][j] = mapping[strategy[i][j]];
+            }
+        }
+        /** END MODIFIED **/
     }
     // now swap nodes until done
     for (int i=0; i<n_nodes; i++) {
@@ -615,7 +646,36 @@ Game::reset()
 {
     solved.reset();
     winner.reset();
-    memset(strategy, -1, sizeof(int[n_nodes]));
+    for (int i=0; i<n_nodes; i++) strategy[i].clear();
 }
+
+/** MODIFIED BY MATT **/
+void
+Game::set_strategy_target(int src, int dest) {
+    if (src < 0 || src >= n_nodes) throw "Strategy source out of range";
+    if (dest < 0 || dest >= n_nodes) throw "Strategy dest out of range";
+
+    strategy[src].clear();
+    strategy[src].push_back(dest);
+}
+
+void
+Game::add_strategy_target(int src, int dest) {
+    if (src < 0 || src >= n_nodes) throw "Strategy source out of range";
+    if (dest < 0 || dest >= n_nodes) throw "Strategy dest out of range";
+
+    strategy[src].push_back(dest);
+}
+
+int
+Game::det_strategy(int src) {
+    if (src < 0 || src > n_nodes) throw "Strategy source out of range";
+    switch (strategy[src].size()) {
+    case 0: return -1;
+    case 1: return strategy[src][0];
+    default: throw "Non-deterministic strategy not expected";
+    }
+}
+/** END MODIFIED **/
 
 }

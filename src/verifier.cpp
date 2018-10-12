@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -56,23 +62,33 @@ Verifier::verify(bool fullgame, bool even, bool odd)
 
         const bool dom = game->winner[i];
 
-        if (game->strategy[i] == -1) {
+        /** MODIFIED BY MATT **/
+        if (game->strategy[i].size() > 1) {
+            throw "Cannot verify non-deterministic strategy";
+        } else if (game->strategy[i].empty()) {
             // no strategy, copy all edges
             out[i].insert(out[i].end(), game->out[i].begin(), game->out[i].end());
         } else {
             // only strategy
-            out[i].push_back(game->strategy[i]);
+            out[i].push_back(game->strategy[i][0]);
         }
+        /** END MODIFIED **/
 
         if (dom == game->owner[i]) {
             // if winner, check whether the strategy stays in the dominion
             if ((even and dom==0) or (odd and dom==1)) {
-                int s = game->strategy[i];
-                if (s == -1) {
+                /** MODIFIED BY MATT **/
+                if (game->strategy[i].empty()) {
                     throw "winning node has no strategy";
-                } else if (!game->solved[s] or game->winner[s] != dom) {
+                }
+
+                int s = game->strategy[i][0];
+
+                if (!game->solved[s] or game->winner[s] != dom) {
                     throw "strategy leaves dominion";
                 }
+                /** END MODIFIED **/
+
                 // check whether the strategy is actually a valid move
                 if (std::find(game->out[i].begin(), game->out[i].end(), s) == game->out[i].end()) {
                     throw "strategy is not a valid move";
@@ -85,7 +101,9 @@ Verifier::verify(bool fullgame, bool even, bool odd)
                 if (!game->solved[to] or game->winner[to] != dom) throw "loser can escape";
             }
             // and of course that no strategy is set
-            if (game->strategy[i] != -1) throw "losing node has strategy";
+            /** MODIFIED BY MATT **/
+            if (!game->strategy[i].empty()) throw "losing node has strategy";
+            /** END MODIFIED **/
         }
     }
 

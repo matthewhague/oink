@@ -490,6 +490,10 @@ SSPMSolver::run(int n_bits, int depth, int player)
     test_b.resize(l);
     test_d = new int[l];
 
+    /** MODIFIED BY MATT **/
+    int *strategy = new int[n_nodes];
+    /** END MODIFIED **/
+
     // initialize progress measures
     // pm_b.reset(); // standard set to 0 already
     memset(pm_d, 0, sizeof(int[l*n_nodes])); // every bit in the top ( = min )
@@ -540,8 +544,10 @@ SSPMSolver::run(int n_bits, int depth, int player)
 
         if (pm_d[l*v] != -1) {
             if (owner[v] != player) {
-                if (lift(v, -1, game->strategy[v], player)) logger << "error: " << v << " is not progressive!" << std::endl;
-                if (trace) logger << " => " << label_vertex(game->strategy[v]);
+                /** MODIFIED BY MATT **/
+                if (lift(v, -1, strategy[v], player)) logger << "error: " << v << " is not progressive!" << std::endl;
+                if (trace) logger << " => " << label_vertex(strategy[v]);
+                /** END MODIFIED **/
             }
         }
 
@@ -554,11 +560,17 @@ SSPMSolver::run(int n_bits, int depth, int player)
 
     for (int v=0; v<n_nodes; v++) {
         if (disabled[v]) continue;
-        if (pm_d[l*v] != -1) oink->solve(v, 1-player, game->strategy[v]);
+        /** MODIFIED BY MATT **/
+        game->set_strategy_target(v, strategy[v]);
+        /** END MODIFIED **/
+        if (pm_d[l*v] != -1) oink->solve(v, 1-player, strategy[v]);
     }
 
     oink->flush();
 
+    /** MODIFIED BY MATT **/
+    delete[] strategy;
+    /** END MODIFIED **/
     delete[] pm_d;
     delete[] tmp_d;
     delete[] best_d;

@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #ifndef SPM_HPP
 #define SPM_HPP
 
 #include <queue>
+/** MODIFIED BY MATT **/
+#include <vector>
+/** END MODIFIED **/
 
 #include "oink.hpp"
 #include "solver.hpp"
@@ -39,6 +48,9 @@ protected:
     int *pms;
     int *tmp, *best;
     int *strategy;
+    /** MODIFIED BY MATT **/
+    std::vector<int> *nondet_strategy;
+    /** END MODIFIED **/
     int *counts;
     int64_t k;
 
@@ -75,4 +87,4 @@ protected:
 
 }
 
-#endif 
+#endif

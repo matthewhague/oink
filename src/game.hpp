@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Modified 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #ifndef GAME_HPP
 #define GAME_HPP
 
@@ -201,6 +207,27 @@ public:
      */
     void swap(Game& other);
 
+    /** MODIFIED BY MATT **/
+    /**
+     * Set strategy to point to dest from src, clearing any other
+     * assignments
+     */
+    void set_strategy_target(int src, int dest);
+
+    /**
+     * Add alternative destination of strategy from source
+     */
+    void add_strategy_target(int src, int dest);
+
+    /**
+     * Get strategy for node assuming it must be deterministic.
+     * Return -1 for no strategy.
+     * Error if strategy is non-deterministic.
+     * Else return strategy target.
+     */
+    int det_strategy(int src);
+    /** END MODIFIED **/
+
     /**
      * Game fields
      */
@@ -215,7 +242,9 @@ public:
 
     bitset solved;         // set true if node solved
     bitset winner;         // for solved vertices, set 1 if won by 1, else 0
-    int *strategy;         // strategy for winning vertices
+    /** MODIFIED BY MATT **/
+    std::vector<int> *strategy; // non-deterministic winning strategy gives possible moves from each node
+    /** END MODIFIED **/
 
     bool reindexed;        // records if the game was reindexed (before solving)
 
@@ -223,4 +252,4 @@ public:
 
 }
 
-#endif 
+#endif

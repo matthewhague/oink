@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #include "npp.hpp"
 
 namespace pg {
@@ -22,7 +28,7 @@ namespace pg {
 NPPSolver::NPPSolver(Oink * oink, Game * game) :
     Solver(oink, game),
     totqueries(0), totpromos(0), maxqueries(0), maxpromos(0), queries(0), promos(0), doms(0),
-    maxprio(priority[n_nodes - 1]), strategy(game->strategy), inverse(new int[maxprio + 1]),
+    maxprio(priority[n_nodes - 1]), inverse(new int[maxprio + 1]),
     Top(0), End(0), Pivot(0)
 {
     uint resprio = maxprio / 20;
@@ -37,6 +43,11 @@ NPPSolver::NPPSolver(Oink * oink, Game * game) :
     R.resize(n_nodes);
     T.resize(n_nodes);
     E.resize(n_nodes);
+
+    /** MODIFIED BY MATT **/
+    strategy = new int[n_nodes];
+    for (int i=0; i<n_nodes; i++) strategy[i] = game->det_strategy(i);
+    /** END MODIFIED **/
 }
 
 NPPSolver::~NPPSolver()

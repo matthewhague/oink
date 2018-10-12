@@ -322,7 +322,9 @@ Oink::solve(int node, int win, int strategy)
 
     game->solved[node] = true;
     game->winner[node] = win;
-    game->strategy[node] = (win == game->owner[node]) ? strategy : -1;
+    /** MODIFIED BY MATT **/
+    game->set_strategy_target(node, (win == game->owner[node]) ? strategy : -1);
+    /** END MODIFIED **/
     disabled[node] = true; // disable
     todo.push(node);
 
@@ -357,7 +359,8 @@ Oink::flush()
             if (game->solved[in]) continue; // already done
             if (game->owner[in] == winner) {
                 // node of winner
-                game->strategy[in] = v;
+                /** MODIFIED BY MATT **/
+                game->add_strategy_target(in, v);
                 game->solved[in] = true;
                 game->winner[in] = winner;
                 disabled[in] = true;
@@ -520,7 +523,7 @@ Oink::run()
         logger << "solved by preprocessor." << std::endl;
         return;
     }
-        
+
     if (solver == -1) {
         logger << "no solver selected" << std::endl;
         return;

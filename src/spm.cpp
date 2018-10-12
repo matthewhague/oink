@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #include <algorithm>
 #include <iomanip>
 #include "spm.hpp"
@@ -339,6 +345,9 @@ SPMSolver::run()
     // now create the data structure, for each node
     pms = new int[(size_t)k*n_nodes];
     strategy = new int[n_nodes];
+    /** MODIFIED BY MATT **/
+    nondet_strategy = new std::vector<int>[n_nodes];
+    /** END MODIFIED **/
     counts = new int[k];
     tmp = new int[k];
     best = new int[k];
@@ -391,7 +400,7 @@ SPMSolver::run()
             for (int from : in[n]) if (!disabled[from] and lift(from, n)) todo_push(from);
         }
     }
-    
+
     /**
      * The main loop.
      */
@@ -612,6 +621,9 @@ SPMSolver::run()
 
     delete[] pms;
     delete[] strategy;
+    /** MODIFIED BY MATT **/
+    delete[] nondet_strategy;
+    /** END MODIFIED **/
     delete[] counts;
     delete[] tmp;
     delete[] best;
