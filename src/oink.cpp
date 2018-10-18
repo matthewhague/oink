@@ -338,6 +338,20 @@ Oink::solve(int node, int win, int strategy)
     // */
 }
 
+/** MODIFIED BY MATT **/
+void
+Oink::solveNondet(int node, int win, int strategy)
+{
+    game->solved[node] = true;
+    game->winner[node] = win;
+    game->add_strategy_target(node, (win == game->owner[node]) ? strategy : -1);
+    // TODO: do we really want to disable?
+    disabled[node] = true;
+    todo.push(node);
+}
+/** END MODIFIED **/
+
+
 void
 Oink::flush()
 {

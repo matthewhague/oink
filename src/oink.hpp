@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #ifndef OINK_HPP
 #define OINK_HPP
 
@@ -94,12 +100,35 @@ public:
      */
     void setTrace(int level) { trace = level; }
 
+    /** MODIFIED BY MATT **/
+    /**
+     * Request a non-deterministic strategy
+     */
+    void setNondeterministicStrategy(bool val) { nondeterministicStrategy = val; }
+
+    /**
+     * Ask whether nondeterministic strategy has been requested
+     */
+    bool getNondeterministicStrategy() { return nondeterministicStrategy; }
+    /** END MODIFIED **/
+
     /**
      * Mark node <node> as won by <winner> with strategy <strategy>.
      * (Set <strategy> to -1 for no strategy.)
      * After marking nodes, call flush().
      */
     void solve(int node, int winner, int strategy);
+
+    /** MODIFIED BY MATT **/
+    /**
+     * Mark node <node> as won by <winner> with strategy <strategy>.
+     * (Set <strategy> to -1 for no strategy.)
+     * After marking nodes, call flush().
+     * Adds move to list of moves, to allow alternative choices to be
+     * added later.
+     */
+    void solveNondet(int node, int winner, int strategy);
+    /** END MODIFIED **/
 
     /**
      * After marking nodes as solved using solve(), flush attracts to the solved dominion.
@@ -171,9 +200,13 @@ protected:
     int *ins;                // all incoming edges
     bitset disabled;         // which vertices are disabled
 
+    /** MODIFIED BY MATT **/
+    bool nondeterministicStrategy = false; // strategy should be deterministic by default
+    /** END MODIFIED **/
+
     friend class pg::Solver; // to allow access to edges
 };
 
 }
 
-#endif 
+#endif

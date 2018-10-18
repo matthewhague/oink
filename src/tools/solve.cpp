@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
+
 #include <csignal>
 #include <iomanip>
 #include <iostream>
@@ -26,7 +32,7 @@
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#include "cxxopts.hpp" 
+#include "cxxopts.hpp"
 #include "game.hpp"
 #include "oink.hpp"
 #include "solvers.hpp"
@@ -197,6 +203,9 @@ int main(int argc, char **argv)
         ("solvers", "List available solvers")
         ("w,workers", "Number of workers for parallel code", cxxopts::value<int>())
         ("z,timeout", "Number of seconds for timeout", cxxopts::value<int>())
+        /** MODIFIED BY MATT **/
+        ("nondet-strat", "Request a nondeterministic winning strategy")
+        /** END MODIFIED **/
         ;
 
     /* Add solvers */
@@ -305,6 +314,9 @@ int main(int argc, char **argv)
     if (opts.count("no-single")) en.setSolveSingle(false);
     if (opts.count("no-loops")) en.setRemoveLoops(false);
     if (opts.count("no-wcwc")) en.setRemoveWCWC(false);
+    /** MODIFIED BY MATT **/
+    if (opts.count("nondet-strat")) en.setNondeterministicStrategy(true);
+    /** END MODIFIED **/
 
     // solver
     if (opts.count("solver")) {

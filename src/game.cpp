@@ -653,18 +653,20 @@ Game::reset()
 void
 Game::set_strategy_target(int src, int dest) {
     if (src < 0 || src >= n_nodes) throw "Strategy source out of range";
-    if (dest < 0 || dest >= n_nodes) throw "Strategy dest out of range";
+    if (dest < -1 || dest >= n_nodes) throw "Strategy dest out of range";
 
     strategy[src].clear();
-    strategy[src].push_back(dest);
+    if (dest > -1)
+        strategy[src].push_back(dest);
 }
 
 void
 Game::add_strategy_target(int src, int dest) {
     if (src < 0 || src >= n_nodes) throw "Strategy source out of range";
-    if (dest < 0 || dest >= n_nodes) throw "Strategy dest out of range";
+    if (dest < -1 || dest >= n_nodes) throw "Strategy dest out of range";
 
-    strategy[src].push_back(dest);
+    if (dest > -1)
+        strategy[src].push_back(dest);
 }
 
 int
