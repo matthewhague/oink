@@ -345,9 +345,6 @@ SPMSolver::run()
     // now create the data structure, for each node
     pms = new int[(size_t)k*n_nodes];
     strategy = new int[n_nodes];
-    /** MODIFIED BY MATT **/
-    nondet_strategy = new std::vector<int>[n_nodes];
-    /** END MODIFIED **/
     counts = new int[k];
     tmp = new int[k];
     best = new int[k];
@@ -616,14 +613,42 @@ SPMSolver::run()
         int *pm = pms + k*n;
         if ((pm[0] == -1) == (pm[1] == -1)) LOGIC_ERROR;
         const int winner = pm[0] == -1 ? 0 : 1;
-        oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
+
+        /** MODIFIED BY MATT **/
+        // get non-det strategy on winning nodes if asked for
+        if (oink->getNondeterministicStrategy() and game->owner[n] == winner) {
+            const int d = priority[n];
+
+            logger << "Node " << n << " ";
+            pm_stream(logger, pm);
+            logger << "\n";
+            for (int to : out[n]) {
+                int *topm = pms + k*to;
+
+                // don't play to losing positions
+                const int to_winner = topm[0] == -1 ? 0 : 1;
+                if (to_winner != winner) continue;
+
+                logger << "What about " << to << " with ";
+                pm_stream(logger, topm);
+                logger << "\n";
+
+                // play to any better position
+                if (pm_less(topm, pm, d, winner)) {
+                    logger << "Better " << to << "\n";
+                    oink->solveNondet(n, winner, to);
+                } else {
+                    logger << "Worse" << "\n";
+                }
+            }
+        } else {
+        /** END MODIFIED **/
+            oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
+        }
     }
 
     delete[] pms;
     delete[] strategy;
-    /** MODIFIED BY MATT **/
-    delete[] nondet_strategy;
-    /** END MODIFIED **/
     delete[] counts;
     delete[] tmp;
     delete[] best;

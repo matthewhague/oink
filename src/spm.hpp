@@ -48,9 +48,6 @@ protected:
     int *pms;
     int *tmp, *best;
     int *strategy;
-    /** MODIFIED BY MATT **/
-    std::vector<int> *nondet_strategy;
-    /** END MODIFIED **/
     int *counts;
     int64_t k;
 
