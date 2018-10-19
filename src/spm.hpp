@@ -24,9 +24,6 @@
 #define SPM_HPP
 
 #include <queue>
-/** MODIFIED BY MATT **/
-#include <vector>
-/** END MODIFIED **/
 
 #include "oink.hpp"
 #include "solver.hpp"

@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Modifed 2018 by Matthew Hague, Royal Holloway, University of London
+ *
+ * Modifications released under same license.  Marked MODIFIED below.
+ */
 
 #include <algorithm>
 #include <iomanip>
@@ -47,6 +52,46 @@ TSPMSolver::pm_less(int* a, int* b, int d, int pl)
     }
     return false;
 }
+
+/** MODIFIED BY MATT **/
+/**
+ * Returns true if a move from a node with pm a to a node with pm b is
+ * a good move for player pl, where the priority of the current node is
+ * d
+ */
+bool
+TSPMSolver::pm_good_move(int* a, int* b, int d, int pl)
+{
+    // either we have to be <=
+    // if d is odd, the inequality must be strict or a = top
+    if ((d&1) == pl) {
+        // case a or b (or both) are top
+        if (a[pl] == -1) return true;
+        if (b[pl] == -1) return false;
+        // normal comparison, start with highest priority
+        const int start = ((k&1) == pl) ? k-2 : k-1;
+        for (int i=start; i>=d; i-=2) {
+            if (a[i] == b[i]) continue;
+            if (a[i] > counts[i] and b[i] > counts[i]) return true;
+            return a[i] <= b[i];
+        }
+        return true;
+    } else {
+        // case a or b (or both) are top
+        if (a[pl] == -1) return true;
+        if (b[pl] == -1) return false;
+        // normal comparison, start with highest priority
+        const int start = ((k&1) == pl) ? k-2 : k-1;
+        for (int i=start; i>=d; i-=2) {
+            if (a[i] == b[i]) continue;
+            if (a[i] > counts[i] and b[i] > counts[i]) return false;
+            return a[i] < b[i];
+        }
+        return false;
+    }
+}
+/** END MODIFIED **/
+
 
 /**
  * Copy for player <pl>.
@@ -367,7 +412,7 @@ TSPMSolver::run()
             for (int from : in[n]) if (!disabled[from] and lift(from, n)) todo_push(from);
         }
     }
-    
+
     /**
      * The main loop.
      */
@@ -394,14 +439,44 @@ TSPMSolver::run()
         }
     }
 #endif
-    
+
     // Now set dominions and derive strategy for even.
     for (int n=0; n<n_nodes; n++) {
         if (disabled[n]) continue;
         int *pm = pms + k*n;
         if ((pm[0] == -1) == (pm[1] == -1)) LOGIC_ERROR;
         const int winner = pm[0] == -1 ? 0 : 1;
-        oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
+
+        if (oink->getNondeterministicStrategy() and game->owner[n] == winner) {
+            const int d = priority[n];
+
+            logger << "Node " << n << " ";
+            pm_stream(logger, pm);
+            logger << "\n";
+            for (int to : out[n]) {
+                if (disabled[n]) continue;
+
+                int *topm = pms + k*to;
+
+                // don't play to losing positions
+                const int to_winner = topm[0] == -1 ? 0 : 1;
+                if (to_winner != winner) continue;
+
+                logger << "What about " << to << " with ";
+                pm_stream(logger, topm);
+                logger << "\n";
+
+                // play to any better position
+                if (pm_good_move(pm, topm, d, winner)) {
+                    logger << "Better " << to << "\n";
+                    oink->solveNondet(n, winner, to);
+                } else {
+                    logger << "Worse" << "\n";
+                }
+            }
+        } else {
+            oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
+        }
     }
 
     delete[] pms;

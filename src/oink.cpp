@@ -347,7 +347,9 @@ Oink::solveNondet(int node, int win, int strategy)
     game->add_strategy_target(node, (win == game->owner[node]) ? strategy : -1);
     // TODO: do we really want to disable?
     disabled[node] = true;
-    todo.push(node);
+
+    if (not game->solved[node] or not disabled[node])
+        todo.push(node);
 }
 /** END MODIFIED **/
 

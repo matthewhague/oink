@@ -494,6 +494,7 @@ SPMSolver::run()
                 /**
                  * OK we found the best exit from <best_from> to <best_to>.
                  */
+                std::cout << "Assigning " << best_from << " to " << best_to << "at 692\n";
                 strategy[best_from] = best_to;
                 pm_copy(pms + best_from*k, best, pl);
                 todo_push(best_from);
@@ -586,7 +587,8 @@ SPMSolver::run()
                 cycles.clear();
             }
 
-            if (counts[max] == 0) {
+            // MODIFIED BY MATT: bounds check on max
+            if (max >= 0 and counts[max] == 0) {
                 if (trace >= 2) logger << "\033[1mlowering max\033[m for player " << (pl == 0 ? "even" : "odd") << std::endl;
                 if (pl == 0) { while (max0 > 0 and counts[max0] == 0) max0 -= 2; }
                 else { while (max1 > 0 and counts[max1] == 0) max1 -= 2; }
@@ -613,38 +615,7 @@ SPMSolver::run()
         int *pm = pms + k*n;
         if ((pm[0] == -1) == (pm[1] == -1)) LOGIC_ERROR;
         const int winner = pm[0] == -1 ? 0 : 1;
-
-        /** MODIFIED BY MATT **/
-        // get non-det strategy on winning nodes if asked for
-        if (oink->getNondeterministicStrategy() and game->owner[n] == winner) {
-            const int d = priority[n];
-
-            logger << "Node " << n << " ";
-            pm_stream(logger, pm);
-            logger << "\n";
-            for (int to : out[n]) {
-                int *topm = pms + k*to;
-
-                // don't play to losing positions
-                const int to_winner = topm[0] == -1 ? 0 : 1;
-                if (to_winner != winner) continue;
-
-                logger << "What about " << to << " with ";
-                pm_stream(logger, topm);
-                logger << "\n";
-
-                // play to any better position
-                if (pm_less(topm, pm, d, winner)) {
-                    logger << "Better " << to << "\n";
-                    oink->solveNondet(n, winner, to);
-                } else {
-                    logger << "Worse" << "\n";
-                }
-            }
-        } else {
-        /** END MODIFIED **/
-            oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
-        }
+        oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
     }
 
     delete[] pms;
