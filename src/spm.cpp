@@ -256,6 +256,7 @@ SPMSolver::lift(int node, int target)
             }
         }
 
+        std::cout << "Assigning " << node << " to " << best_to << "at 259\n";
         strategy[node] = best_to;
         // note: sometimes only the strategy changes, but the lowest pm stays the same
         // now "best" contains the smallest Prog, which may be higher than the current min
@@ -494,7 +495,7 @@ SPMSolver::run()
                 /**
                  * OK we found the best exit from <best_from> to <best_to>.
                  */
-                std::cout << "Assigning " << best_from << " to " << best_to << "at 692\n";
+                std::cout << "Assigning " << best_from << " to " << best_to << "at 498\n";
                 strategy[best_from] = best_to;
                 pm_copy(pms + best_from*k, best, pl);
                 todo_push(best_from);

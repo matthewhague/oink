@@ -62,6 +62,7 @@ TSPMSolver::pm_less(int* a, int* b, int d, int pl)
 bool
 TSPMSolver::pm_good_move(int* a, int* b, int d, int pl)
 {
+    logger << "pm_good_move " << a[pl] << " " << b[pl] << " " << pl << "\n";
     // either we have to be <=
     // if d is odd, the inequality must be strict or a = top
     if ((d&1) == pl) {
@@ -73,7 +74,7 @@ TSPMSolver::pm_good_move(int* a, int* b, int d, int pl)
         for (int i=start; i>=d; i-=2) {
             if (a[i] == b[i]) continue;
             if (a[i] > counts[i] and b[i] > counts[i]) return true;
-            return a[i] <= b[i];
+            return b[i] <= a[i];
         }
         return true;
     } else {
@@ -85,7 +86,7 @@ TSPMSolver::pm_good_move(int* a, int* b, int d, int pl)
         for (int i=start; i>=d; i-=2) {
             if (a[i] == b[i]) continue;
             if (a[i] > counts[i] and b[i] > counts[i]) return false;
-            return a[i] < b[i];
+            return b[i] < a[i];
         }
         return false;
     }
@@ -116,8 +117,8 @@ TSPMSolver::pm_stream(std::ostream &out, int *pm)
     if (topo) out << " \033[1;33mTo\033[m";
     else out << " " << pm[1];
     for (int i=2; i<k; i++) {
-        if (i&1) out << " " << (topo ? 0 : pm[i]);
-        else     out << " " << (tope ? 0 : pm[i]);
+        if (i&1) out << " " << i << ":" << (topo ? 0 : pm[i]);
+        else     out << " " << i << ":" << (tope ? 0 : pm[i]);
     }
     out << " } ";
 }
@@ -281,6 +282,7 @@ TSPMSolver::lift(int node, int target)
             }
         }
 
+        logger << "Setting " << node << " to " << best_to << "\n";
         strategy[node] = best_to;
         // note: sometimes only the strategy changes, but the lowest pm stays the same
         // now "best" contains the smallest Prog, which may be higher than the current min
@@ -290,6 +292,25 @@ TSPMSolver::lift(int node, int target)
             else best_ch0 = best_to;
         }
     }
+
+    /** MODIFIED BY MATT **/
+    // set strategy for owner (pl_max)
+    // reset strategy and then add new good choices
+    nd_strategy[node].clear();
+    logger << "Node has pm";
+    pm_stream(logger, pm);
+    logger << "\n";
+    for (int to : out[node]) {
+        if (disabled[to]) continue;
+        logger << "considering " << to << " with pm ";
+        pm_stream(logger, pms + k*to);
+        if (pm_good_move(pm, pms + k*to, d, pl_max)) {
+            logger << " good!";
+            nd_strategy[node].push_back(to);
+        }
+        logger << "\n";
+    }
+    /** END MODIFIED **/
 
     bool ch0 = best_ch0 != -1;
     bool ch1 = best_ch1 != -1;
@@ -376,6 +397,9 @@ TSPMSolver::run()
     // now create the data structure, for each node
     pms = new int[(size_t)k*n_nodes];
     strategy = new int[n_nodes];
+    /** MODIFIED BY MATT **/
+    nd_strategy = new std::vector<int>[n_nodes];
+    /** END MODIFIED **/
     counts = new int[k];
     tmp = new int[k];
     best = new int[k];
@@ -448,32 +472,7 @@ TSPMSolver::run()
         const int winner = pm[0] == -1 ? 0 : 1;
 
         if (oink->getNondeterministicStrategy() and game->owner[n] == winner) {
-            const int d = priority[n];
-
-            logger << "Node " << n << " ";
-            pm_stream(logger, pm);
-            logger << "\n";
-            for (int to : out[n]) {
-                if (disabled[n]) continue;
-
-                int *topm = pms + k*to;
-
-                // don't play to losing positions
-                const int to_winner = topm[0] == -1 ? 0 : 1;
-                if (to_winner != winner) continue;
-
-                logger << "What about " << to << " with ";
-                pm_stream(logger, topm);
-                logger << "\n";
-
-                // play to any better position
-                if (pm_good_move(pm, topm, d, winner)) {
-                    logger << "Better " << to << "\n";
-                    oink->solveNondet(n, winner, to);
-                } else {
-                    logger << "Worse" << "\n";
-                }
-            }
+            for (int to : nd_strategy[n]) oink->solveNondet(n, winner, to);
         } else {
             oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
         }
@@ -481,6 +480,9 @@ TSPMSolver::run()
 
     delete[] pms;
     delete[] strategy;
+    /** MODIFIED BY MATT **/
+    delete [] nd_strategy;
+    /** END MODIFIED **/
     delete[] counts;
     delete[] tmp;
     delete[] best;
