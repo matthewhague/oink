@@ -62,33 +62,35 @@ TSPMSolver::pm_less(int* a, int* b, int d, int pl)
 bool
 TSPMSolver::pm_good_move(int* a, int* b, int d, int pl)
 {
-    logger << "pm_good_move " << a[pl] << " " << b[pl] << " " << pl << "\n";
+    // if even player, look at odd measures, and vice versa
+    int op = 1 - pl;
     // either we have to be <=
-    // if d is odd, the inequality must be strict or a = top
-    if ((d&1) == pl) {
+    // if d parity doesn't match the player, the inequality must be
+    // strict or a = top
+    if ((d&1) != pl) {
         // case a or b (or both) are top
-        if (a[pl] == -1) return true;
-        if (b[pl] == -1) return false;
+        if (a[op] == -1) return true;
+        if (b[op] == -1) return false;
         // normal comparison, start with highest priority
-        const int start = ((k&1) == pl) ? k-2 : k-1;
-        for (int i=start; i>=d; i-=2) {
-            if (a[i] == b[i]) continue;
-            if (a[i] > counts[i] and b[i] > counts[i]) return true;
-            return b[i] <= a[i];
-        }
-        return true;
-    } else {
-        // case a or b (or both) are top
-        if (a[pl] == -1) return true;
-        if (b[pl] == -1) return false;
-        // normal comparison, start with highest priority
-        const int start = ((k&1) == pl) ? k-2 : k-1;
+        const int start = ((k&1) == pl) ? k-1 : k-2;
         for (int i=start; i>=d; i-=2) {
             if (a[i] == b[i]) continue;
             if (a[i] > counts[i] and b[i] > counts[i]) return false;
             return b[i] < a[i];
         }
         return false;
+    } else {
+        // case a or b (or both) are top
+        if (a[op] == -1) return true;
+        if (b[op] == -1) return false;
+        // normal comparison, start with highest priority
+        const int start = ((k&1) == pl) ? k-1 : k-2;
+        for (int i=start; i>=d; i-=2) {
+            if (a[i] == b[i]) continue;
+            if (a[i] > counts[i] and b[i] > counts[i]) return true;
+            return b[i] <= a[i];
+        }
+        return true;
     }
 }
 /** END MODIFIED **/
@@ -282,8 +284,30 @@ TSPMSolver::lift(int node, int target)
             }
         }
 
-        logger << "Setting " << node << " to " << best_to << "\n";
         strategy[node] = best_to;
+
+        /** MODIFIED BY MATT **/
+        // set strategy for owner (pl_max)
+        // reset strategy and then add new good choices
+        nd_strategy[node].clear();
+        for (int to : out[node]) {
+            if (disabled[to]) continue;
+            // a move is good if it has the same PM as best when looking
+            // at the opposite parity priorities
+            // NOTE: cannot be anything less than pms[node] since only
+            // the best one is final according to Tom Van Dijk
+            logger << "Considering " << node << " vs " << to << " ";
+            pm_stream(logger, best);
+            logger << " vs ";
+            pm_stream(logger, pms + k*to);
+            Prog(tmp, pms + k*to, d, pl_min);
+            if (not pm_less(best, tmp, d, pl_min)) {
+                logger << "go\n";
+                nd_strategy[node].push_back(to);
+            }
+        }
+        /** END MODIFIED **/
+
         // note: sometimes only the strategy changes, but the lowest pm stays the same
         // now "best" contains the smallest Prog, which may be higher than the current min
         if (pm_less(pm, best, d, pl_min)) {
@@ -292,25 +316,6 @@ TSPMSolver::lift(int node, int target)
             else best_ch0 = best_to;
         }
     }
-
-    /** MODIFIED BY MATT **/
-    // set strategy for owner (pl_max)
-    // reset strategy and then add new good choices
-    nd_strategy[node].clear();
-    logger << "Node has pm";
-    pm_stream(logger, pm);
-    logger << "\n";
-    for (int to : out[node]) {
-        if (disabled[to]) continue;
-        logger << "considering " << to << " with pm ";
-        pm_stream(logger, pms + k*to);
-        if (pm_good_move(pm, pms + k*to, d, pl_max)) {
-            logger << " good!";
-            nd_strategy[node].push_back(to);
-        }
-        logger << "\n";
-    }
-    /** END MODIFIED **/
 
     bool ch0 = best_ch0 != -1;
     bool ch1 = best_ch1 != -1;
@@ -471,9 +476,11 @@ TSPMSolver::run()
         if ((pm[0] == -1) == (pm[1] == -1)) LOGIC_ERROR;
         const int winner = pm[0] == -1 ? 0 : 1;
 
+        /** MODIFIED BY MATT **/
         if (oink->getNondeterministicStrategy() and game->owner[n] == winner) {
             for (int to : nd_strategy[n]) oink->solveNondet(n, winner, to);
         } else {
+        /** END MODIFIED **/
             oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
         }
     }
