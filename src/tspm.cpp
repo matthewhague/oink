@@ -286,28 +286,6 @@ TSPMSolver::lift(int node, int target)
 
         strategy[node] = best_to;
 
-        /** MODIFIED BY MATT **/
-        // set strategy for owner (pl_max)
-        // reset strategy and then add new good choices
-        nd_strategy[node].clear();
-        for (int to : out[node]) {
-            if (disabled[to]) continue;
-            // a move is good if it has the same PM as best when looking
-            // at the opposite parity priorities
-            // NOTE: cannot be anything less than pms[node] since only
-            // the best one is final according to Tom Van Dijk
-            logger << "Considering " << node << " vs " << to << " ";
-            pm_stream(logger, best);
-            logger << " vs ";
-            pm_stream(logger, pms + k*to);
-            Prog(tmp, pms + k*to, d, pl_min);
-            if (not pm_less(best, tmp, d, pl_min)) {
-                logger << "go\n";
-                nd_strategy[node].push_back(to);
-            }
-        }
-        /** END MODIFIED **/
-
         // note: sometimes only the strategy changes, but the lowest pm stays the same
         // now "best" contains the smallest Prog, which may be higher than the current min
         if (pm_less(pm, best, d, pl_min)) {
@@ -402,9 +380,6 @@ TSPMSolver::run()
     // now create the data structure, for each node
     pms = new int[(size_t)k*n_nodes];
     strategy = new int[n_nodes];
-    /** MODIFIED BY MATT **/
-    nd_strategy = new std::vector<int>[n_nodes];
-    /** END MODIFIED **/
     counts = new int[k];
     tmp = new int[k];
     best = new int[k];
@@ -475,10 +450,18 @@ TSPMSolver::run()
         int *pm = pms + k*n;
         if ((pm[0] == -1) == (pm[1] == -1)) LOGIC_ERROR;
         const int winner = pm[0] == -1 ? 0 : 1;
+        const int owner = game->owner[n];
+        const int d = priority[n];
 
         /** MODIFIED BY MATT **/
-        if (oink->getNondeterministicStrategy() and game->owner[n] == winner) {
-            for (int to : nd_strategy[n]) oink->solveNondet(n, winner, to);
+        if (oink->getNondeterministicStrategy() and owner == winner) {
+            for (int to : out[n]) {
+                // a move is good if it has the same PM as best when looking
+                // at the opposite parity priorities
+                if (pm_good_move(pm, pms + k*to, d, owner)) {
+                    oink->solveNondet(n, winner, to);
+                }
+            }
         } else {
         /** END MODIFIED **/
             oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
@@ -487,9 +470,6 @@ TSPMSolver::run()
 
     delete[] pms;
     delete[] strategy;
-    /** MODIFIED BY MATT **/
-    delete [] nd_strategy;
-    /** END MODIFIED **/
     delete[] counts;
     delete[] tmp;
     delete[] best;
