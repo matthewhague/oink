@@ -71,7 +71,6 @@ Game::Game(const Game& other) : Game(other.n_nodes)
     solved = other.solved;
     winner = other.winner;
     /** MODIFIED BY MATT **/
-    strategy = new std::vector<int>[n_nodes];
     for (int i=0; i<n_nodes; i++) strategy[i] = other.strategy[i];
     /** END MODIFIED **/
 }
@@ -229,7 +228,9 @@ Game::~Game()
     delete[] out;
     delete[] in;
     delete[] label;
+    /** MODIFIED BY MATT **/
     delete[] strategy;
+    /** END MODIFIED **/
 }
 
 void
@@ -424,11 +425,7 @@ Game::permute(int *mapping)
         for (auto it = in[i].begin(); it != in[i].end(); it++) *it = mapping[*it];
         for (auto it = out[i].begin(); it != out[i].end(); it++) *it = mapping[*it];
         /** MODIFIED  BY MATT **/
-        for (int i=0; i<n_nodes; i++) {
-            for (unsigned j=0; j<strategy[i].size(); j++) {
-                strategy[i][j] = mapping[strategy[i][j]];
-            }
-        }
+        for (auto it = strategy[i].begin(); it != strategy[i].end(); it++) *it = mapping[*it];
         /** END MODIFIED **/
     }
     // now swap nodes until done
