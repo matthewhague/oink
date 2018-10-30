@@ -55,6 +55,9 @@ protected:
     bool canlift(int node, int pl);
     bool lift(int node, int target);
     bool pm_less(int *a, int *b, int d, int pl);
+    /** MODIFIED BY MATT **/
+    bool pm_good_move(int *a, int *b, int d, int pl);
+    /** END MODIFIED **/
     void pm_copy(int *dst, int *src, int pl);
     int pm_cycles(int *a, int pl);
     void pm_stream(std::ostream &out, int *pm);

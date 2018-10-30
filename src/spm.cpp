@@ -66,6 +66,48 @@ SPMSolver::pm_less(int* a, int* b, int d, int pl)
     return false;
 }
 
+/** MODIFIED BY MATT **/
+/**
+ * Returns true if a move from a node with pm a to a node with pm b is
+ * a good move for player pl, where the priority of the current node is
+ * d
+ */
+bool
+SPMSolver::pm_good_move(int* a, int* b, int d, int pl)
+{
+    // if even player, look at odd measures, and vice versa
+    int op = 1 - pl;
+    // either we have to be <=
+    // if d parity doesn't match the player, the inequality must be
+    // strict or a = top
+    if ((d&1) != pl) {
+        // case a or b (or both) are top
+        if (a[op] == -1) return true;
+        if (b[op] == -1) return false;
+        // normal comparison, start with highest priority
+        const int start = ((k&1) == pl) ? k-1 : k-2;
+        for (int i=start; i>=d; i-=2) {
+            if (a[i] == b[i]) continue;
+            if (a[i] > counts[i] and b[i] > counts[i]) return false;
+            return b[i] < a[i];
+        }
+        return false;
+    } else {
+        // case a or b (or both) are top
+        if (a[op] == -1) return true;
+        if (b[op] == -1) return false;
+        // normal comparison, start with highest priority
+        const int start = ((k&1) == pl) ? k-1 : k-2;
+        for (int i=start; i>=d; i-=2) {
+            if (a[i] == b[i]) continue;
+            if (a[i] > counts[i] and b[i] > counts[i]) return true;
+            return b[i] <= a[i];
+        }
+        return true;
+    }
+}
+/** END MODIFIED **/
+
 /**
  * Copy for player <pl>.
  */
@@ -256,7 +298,6 @@ SPMSolver::lift(int node, int target)
             }
         }
 
-        std::cout << "Assigning " << node << " to " << best_to << "at 259\n";
         strategy[node] = best_to;
         // note: sometimes only the strategy changes, but the lowest pm stays the same
         // now "best" contains the smallest Prog, which may be higher than the current min
@@ -495,7 +536,6 @@ SPMSolver::run()
                 /**
                  * OK we found the best exit from <best_from> to <best_to>.
                  */
-                std::cout << "Assigning " << best_from << " to " << best_to << "at 498\n";
                 strategy[best_from] = best_to;
                 pm_copy(pms + best_from*k, best, pl);
                 todo_push(best_from);
@@ -616,7 +656,22 @@ SPMSolver::run()
         int *pm = pms + k*n;
         if ((pm[0] == -1) == (pm[1] == -1)) LOGIC_ERROR;
         const int winner = pm[0] == -1 ? 0 : 1;
-        oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
+        const int owner = game->owner[n];
+        const int d = priority[n];
+
+        /** MODIFIED BY MATT **/
+        if (oink->getNondeterministicStrategy() and owner == winner) {
+            for (int to : out[n]) {
+                // a move is good if it has the same PM as best when looking
+                // at the opposite parity priorities
+                if (pm_good_move(pm, pms + k*to, d, owner)) {
+                    oink->solveNondet(n, winner, to);
+                }
+            }
+        } else {
+        /** END MODIFIED **/
+            oink->solve(n, winner, game->owner[n] == winner ? strategy[n] : -1);
+        }
     }
 
     delete[] pms;
